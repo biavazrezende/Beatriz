@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename="/sistema-organograma">
         <Routes>
           <Route path="/" element={<OrgChart />} />
           <Route path="/login" element={<Login />} />
