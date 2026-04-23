@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { LayoutDashboard, Users, ClipboardList, LogOut, ExternalLink, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, LogOut, ExternalLink, Menu, X, GitBranch } from 'lucide-react'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/employees', label: 'Colaboradores', icon: Users },
+  { to: '/admin/org-tree', label: 'Hierarquia', icon: GitBranch },
   { to: '/admin/audit', label: 'Auditoria', icon: ClipboardList },
 ]
 
@@ -13,6 +14,7 @@ const PAGE_TITLES = {
   '/admin': 'Dashboard',
   '/admin/employees': 'Colaboradores',
   '/admin/employees/new': 'Novo colaborador',
+  '/admin/org-tree': 'Hierarquia',
   '/admin/audit': 'Auditoria',
 }
 

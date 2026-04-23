@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
+import { toPng } from 'html-to-image'
 import { useEmployees } from '../hooks/useEmployees'
 import { OrgNode } from '../components/OrgNode'
 import { SearchBar } from '../components/SearchBar'
 import {
   X, Mail, Building2, Briefcase, Users,
-  ChevronDown, ChevronRight, Menu, Filter,
+  Menu, Filter, Download, Loader2,
 } from 'lucide-react'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -135,6 +136,29 @@ export default function OrgChart() {
   const [departmentFilter, setDepartmentFilter] = useState('Todos')
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const chartRef = useRef(null)
+
+  async function handleExportPng() {
+    if (!chartRef.current || exporting) return
+    setExporting(true)
+    try {
+      const dataUrl = await toPng(chartRef.current, {
+        backgroundColor: '#F9FAFB',
+        pixelRatio: 2,
+        // exclude UI controls from the capture
+        filter: (node) => !node.classList?.contains('no-export'),
+      })
+      const link = document.createElement('a')
+      link.download = `organograma-amorsaude-${new Date().getFullYear()}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (e) {
+      console.error('Erro ao exportar PNG', e)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const isFiltering = !!search || departmentFilter !== 'Todos'
 
@@ -213,9 +237,23 @@ export default function OrgChart() {
             />
           </div>
 
-          <a href="/login" className="text-xs text-apatita hover:text-white transition-colors font-medium flex-shrink-0">
-            Admin →
-          </a>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleExportPng}
+              disabled={exporting || isLoading}
+              className="no-export flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors disabled:opacity-50"
+              title="Exportar como PNG"
+            >
+              {exporting
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />
+              }
+              <span className="hidden sm:inline">{exporting ? 'Exportando…' : 'Exportar PNG'}</span>
+            </button>
+            <a href="/login" className="text-xs text-apatita hover:text-white transition-colors font-medium">
+              Admin →
+            </a>
+          </div>
         </div>
       </header>
 
@@ -366,7 +404,7 @@ export default function OrgChart() {
                 </div>
               )}
 
-              <div className="flex justify-start min-w-max">
+              <div ref={chartRef} className="flex justify-start min-w-max">
                 <div className="flex gap-10 items-start">
                   {tree.map((root) => (
                     <OrgNode

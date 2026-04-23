@@ -74,6 +74,22 @@ export function useAuditLog() {
   })
 }
 
+export function useEmployeeAuditLog(employeeId) {
+  return useQuery({
+    queryKey: ['audit_log', employeeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('audit_log')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data
+    },
+    enabled: Boolean(employeeId),
+  })
+}
+
 export async function uploadPhoto(employeeId, file) {
   const ext = file.name.split('.').pop()
   const path = `${employeeId}.${ext}`
