@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
 
@@ -58,12 +58,11 @@ export default function Login() {
         <div className="absolute top-1/3 right-0 w-40 h-40 rounded-full bg-vermelho/5" />
 
         <div className="relative z-10 max-w-xs text-center">
-          <div className="w-20 h-20 rounded-3xl bg-apatita mx-auto mb-8 flex items-center justify-center shadow-2xl shadow-apatita/30">
-            <span className="text-white font-black text-4xl tracking-tight">A</span>
-          </div>
-          <h1 className="text-white font-black text-4xl leading-tight mb-3">
-            AmorSaúde
-          </h1>
+          <img
+            src="https://5338832.fs1.hubspotusercontent-na1.net/hubfs/5338832/LOGO_AS_VERTICAL.png"
+            alt="AmorSaúde"
+            className="h-28 w-auto object-contain mx-auto mb-8 brightness-0 invert"
+          />
           <p className="text-apatita/70 text-lg font-light">
             Organograma 2026
           </p>
@@ -80,10 +79,11 @@ export default function Login() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-apatita mx-auto mb-4 flex items-center justify-center shadow-lg shadow-apatita/30">
-              <span className="text-white font-black text-2xl">A</span>
-            </div>
-            <h1 className="text-azul-escuro font-black text-2xl">AmorSaúde</h1>
+            <img
+              src="https://5338832.fs1.hubspotusercontent-na1.net/hubfs/5338832/LOGO_AS_VERTICAL.png"
+              alt="AmorSaúde"
+              className="h-20 w-auto object-contain mx-auto mb-4"
+            />
             <p className="text-gray-500 text-sm">Painel Administrativo</p>
           </div>
 
@@ -157,9 +157,9 @@ export default function Login() {
           </div>
 
           <p className="text-center mt-5">
-            <a href="/" className="text-sm text-gray-400 hover:text-apatita transition-colors">
+            <Link to="/" className="text-sm text-gray-400 hover:text-apatita transition-colors">
               ← Ver organograma público
-            </a>
+            </Link>
           </p>
         </div>
       </div>
