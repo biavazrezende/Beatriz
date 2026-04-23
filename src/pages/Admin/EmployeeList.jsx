@@ -1,8 +1,125 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { useEmployees, useDeleteEmployee } from '../../hooks/useEmployees'
+import { useEmployees, useDeleteEmployee, useEmployeeAuditLog } from '../../hooks/useEmployees'
 import { SearchBar } from '../../components/SearchBar'
-import { UserPlus, Pencil, Trash2, ChevronUp, ChevronDown, X, AlertTriangle } from 'lucide-react'
+import { UserPlus, Pencil, Trash2, ChevronUp, ChevronDown, X, AlertTriangle, History, FilePlus, FileEdit, Clock } from 'lucide-react'
+
+// ─── History modal ───────────────────────────────────────────────────────────
+
+const AUDIT_ICON = {
+  created: { Icon: FilePlus,  color: 'text-green-600 bg-green-50',  label: 'Criado' },
+  updated: { Icon: FileEdit,  color: 'text-apatita bg-apatita/10',  label: 'Atualizado' },
+  deleted: { Icon: Trash2,    color: 'text-vermelho bg-red-50',     label: 'Removido' },
+}
+const FIELD_PT = { name: 'Nome', role: 'Cargo', department: 'Departamento', manager_id: 'Gestor', email: 'E-mail', status: 'Status', photo_url: 'Foto' }
+const STATUS_PT = { active: 'Ativo', inactive: 'Inativo', hiring: 'Em contratação' }
+
+function formatDate(d) {
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
+}
+
+function HistoryModal({ employee, onClose }) {
+  const { data: logs = [], isLoading } = useEmployeeAuditLog(employee.id)
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col border border-gray-200" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            {employee.photo_url
+              ? <img src={employee.photo_url} alt={employee.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
+              : <div className="w-9 h-9 rounded-full bg-apatita/15 flex items-center justify-center text-sm font-bold text-apatita">{employee.name[0]}</div>
+            }
+            <div>
+              <p className="font-bold text-azul-escuro text-sm">{employee.name}</p>
+              <p className="text-xs text-gray-500">{employee.role}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoading && (
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />)}
+            </div>
+          )}
+
+          {!isLoading && logs.length === 0 && (
+            <div className="py-12 text-center text-gray-400">
+              <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Nenhuma alteração registrada</p>
+            </div>
+          )}
+
+          {!isLoading && logs.length > 0 && (
+            <div className="divide-y divide-gray-100">
+              {logs.map((log) => {
+                const cfg = AUDIT_ICON[log.action] ?? AUDIT_ICON.updated
+                const { Icon } = cfg
+
+                const changedFields = log.old_data && log.new_data
+                  ? Object.keys(log.new_data).filter(
+                      (k) => !['id', 'created_at', 'updated_at'].includes(k) &&
+                             String(log.old_data[k] ?? '') !== String(log.new_data[k] ?? '')
+                    )
+                  : []
+
+                return (
+                  <div key={log.id} className="px-5 py-3.5 hover:bg-gray-50/60 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.color}`}>
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${cfg.color}`}>{cfg.label}</span>
+                          <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(log.created_at)}</span>
+                        </div>
+                        {log.changed_by_email && (
+                          <p className="text-xs text-gray-400 mt-0.5">por {log.changed_by_email}</p>
+                        )}
+                        {changedFields.length > 0 && (
+                          <div className="mt-1.5 space-y-0.5">
+                            {changedFields.map((k) => (
+                              <div key={k} className="flex items-center gap-1.5 text-xs">
+                                <span className="text-gray-500 w-20 flex-shrink-0">{FIELD_PT[k] ?? k}</span>
+                                <span className="line-through text-gray-400 truncate max-w-[100px]">
+                                  {k === 'status' ? (STATUS_PT[log.old_data[k]] ?? log.old_data[k]) : (log.old_data[k] ?? '—')}
+                                </span>
+                                <span className="text-gray-400">→</span>
+                                <span className="text-gray-700 font-medium truncate max-w-[100px]">
+                                  {k === 'status' ? (STATUS_PT[log.new_data[k]] ?? log.new_data[k]) : (log.new_data[k] ?? '—')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-xs text-gray-400">{logs.length} registro{logs.length !== 1 ? 's' : ''}</span>
+          <Link to="/admin/audit" onClick={onClose} className="text-xs text-apatita hover:underline">
+            Ver log completo →
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 const STATUS_LABEL = { active: 'Ativo', inactive: 'Inativo', hiring: 'Em contratação' }
 const STATUS_COLOR = {
@@ -54,6 +171,7 @@ export default function EmployeeList() {
   const [deptFilter, setDeptFilter] = useState('')
   const [sort, setSort] = useState({ field: 'name', dir: 'asc' })
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [historyEmployee, setHistoryEmployee] = useState(null)
 
   const departments = useMemo(
     () => [...new Set(employees.map((e) => e.department))].sort(),
@@ -232,6 +350,13 @@ export default function EmployeeList() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => setHistoryEmployee(emp)}
+                            className="p-1.5 text-gray-400 hover:text-azul-escuro hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Histórico"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
                           <Link
                             to={`/admin/employees/${emp.id}/edit`}
                             className="p-1.5 text-gray-400 hover:text-apatita hover:bg-apatita/10 rounded-lg transition-colors"
@@ -255,6 +380,11 @@ export default function EmployeeList() {
             </>
           )}
         </div>
+      )}
+
+      {/* History modal */}
+      {historyEmployee && (
+        <HistoryModal employee={historyEmployee} onClose={() => setHistoryEmployee(null)} />
       )}
 
       {/* Delete confirmation modal */}
