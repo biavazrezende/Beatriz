@@ -50,7 +50,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* ── Sidebar ───────────────────────────────────────────────────── */}
+      {/* ── Sidebar ───────────────────────────────────────────────────────── */}
       <aside className={`
         bg-azul-escuro text-white w-60 flex-shrink-0 flex flex-col
         fixed inset-y-0 left-0 z-40 transition-transform duration-300
@@ -60,13 +60,12 @@ export default function AdminLayout() {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-apatita flex items-center justify-center font-black text-white text-lg shadow-md shadow-apatita/30">
-              A
-            </div>
-            <div>
-              <p className="font-bold text-sm leading-tight">AmorSaúde</p>
-              <p className="text-xs text-apatita/70 leading-tight">Painel Admin</p>
-            </div>
+            <img
+              src="https://5338832.fs1.hubspotusercontent-na1.net/hubfs/5338832/LOGO_AS_VERTICAL.png"
+              alt="AmorSaúde"
+              className="h-9 w-auto object-contain brightness-0 invert"
+            />
+            <p className="text-xs text-apatita/70 leading-tight">Painel Admin</p>
           </div>
         </div>
 
@@ -94,7 +93,7 @@ export default function AdminLayout() {
         {/* Bottom section */}
         <div className="px-3 py-4 border-t border-white/10 space-y-1">
           <a
-            href="/"
+            href="/sistema-organograma/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/8 transition-colors"
@@ -124,7 +123,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* ── Main content ──────────────────────────────────────────────── */}
+      {/* ── Main content ───────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
         <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 lg:hidden sticky top-0 z-20 shadow-sm">

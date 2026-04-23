@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { toPng } from 'html-to-image'
 import { useEmployees } from '../hooks/useEmployees'
 import { OrgNode } from '../components/OrgNode'
@@ -8,7 +9,7 @@ import {
   Menu, Filter, Download, Loader2,
 } from 'lucide-react'
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────────
 
 function buildTree(employees, managerId = null) {
   return employees
@@ -48,7 +49,7 @@ function getAncestorIds(employeeMap, matchedIds) {
   return ancestors
 }
 
-// ─── Skeleton ───────────────────────────────────────────────────────────────
+// ─── Skeleton ───────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
   return (
@@ -60,7 +61,7 @@ function SkeletonCard() {
   )
 }
 
-// ─── Employee detail modal ───────────────────────────────────────────────────
+// ─── Employee detail modal ─────────────────────────────────────────────────────
 
 function EmployeeModal({ employee, onClose }) {
   return (
@@ -128,7 +129,7 @@ function EmployeeModal({ employee, onClose }) {
   )
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
+// ─── Main page ──────────────────────────────────────────────────────────────────────
 
 export default function OrgChart() {
   const { data: employees, isLoading, error } = useEmployees()
@@ -219,13 +220,11 @@ export default function OrgChart() {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 rounded-lg bg-apatita flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
-              A
-            </div>
-            <div>
-              <h1 className="font-bold text-base leading-tight">AmorSaúde</h1>
-              <p className="text-xs text-apatita/80 leading-tight">Organograma 2026</p>
-            </div>
+            <img
+              src="https://5338832.fs1.hubspotusercontent-na1.net/hubfs/5338832/LOGO_AS_VERTICAL.png"
+              alt="AmorSaúde"
+              className="h-9 w-auto object-contain brightness-0 invert"
+            />
           </div>
 
           {/* Inline search on desktop */}
@@ -250,15 +249,15 @@ export default function OrgChart() {
               }
               <span className="hidden sm:inline">{exporting ? 'Exportando…' : 'Exportar PNG'}</span>
             </button>
-            <a href="/login" className="text-xs text-apatita hover:text-white transition-colors font-medium">
+            <Link to="/login" className="text-xs text-apatita hover:text-white transition-colors font-medium">
               Admin →
-            </a>
+            </Link>
           </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+        {/* ── Sidebar ─────────────────────────────────────────────────────────────── */}
         {sidebarOpen && (
           <div
             className="lg:hidden fixed inset-0 z-20 bg-black/20"
@@ -352,7 +351,7 @@ export default function OrgChart() {
           </div>
         </aside>
 
-        {/* ── Main chart area ──────────────────────────────────────────────── */}
+        {/* ── Main chart area ────────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-auto">
           {isLoading && (
             <div className="flex gap-6 justify-center flex-wrap p-8">
