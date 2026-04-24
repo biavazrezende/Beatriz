@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { LayoutDashboard, Users, ClipboardList, LogOut, ExternalLink, Menu, X, GitBranch } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, LogOut, ExternalLink, Menu, X, GitBranch, Building2 } from 'lucide-react'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/employees', label: 'Colaboradores', icon: Users },
+  { to: '/admin/departments', label: 'Departamentos', icon: Building2 },
   { to: '/admin/org-tree', label: 'Hierarquia', icon: GitBranch },
   { to: '/admin/audit', label: 'Auditoria', icon: ClipboardList },
 ]
@@ -14,6 +15,7 @@ const PAGE_TITLES = {
   '/admin': 'Dashboard',
   '/admin/employees': 'Colaboradores',
   '/admin/employees/new': 'Novo colaborador',
+  '/admin/departments': 'Departamentos',
   '/admin/org-tree': 'Hierarquia',
   '/admin/audit': 'Auditoria',
 }
@@ -123,7 +125,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* ── Main content ───────────────────────────────────────────────────────── */}
+      {/* ── Main content ──────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
         <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 lg:hidden sticky top-0 z-20 shadow-sm">
