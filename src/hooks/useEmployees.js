@@ -51,7 +51,15 @@ export function useUpdateEmployee() {
 export function useDeleteEmployee() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id) => {
+    // Expects { id, managerId } — reassigns direct reports before deleting
+    mutationFn: async ({ id, managerId }) => {
+      // Reassign direct reports to the deleted employee's own manager (or null)
+      const { error: reassignError } = await supabase
+        .from('employees')
+        .update({ manager_id: managerId ?? null })
+        .eq('manager_id', id)
+      if (reassignError) throw reassignError
+
       const { error } = await supabase.from('employees').delete().eq('id', id)
       if (error) throw error
     },
