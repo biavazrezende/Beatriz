@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEmployees, useAddEmployee, useUpdateEmployee, uploadPhoto } from '../../hooks/useEmployees'
-import { ArrowLeft, Upload, X, ImagePlus, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useDepartments } from '../../hooks/useDepartments'
+import { ArrowLeft, Upload, X, ImagePlus, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
@@ -9,8 +10,35 @@ const STATUS_OPTIONS = [
   { value: 'hiring', label: 'Em contratação' },
 ]
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_RAW_SIZE = 20 * 1024 * 1024 // 20 MB hard cap before compression
+
+// Compress image to max 1200px wide / tall at 85% JPEG quality
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX_DIM = 1200
+      const ratio = Math.min(1, MAX_DIM / Math.max(img.width, img.height))
+      const w = Math.round(img.width * ratio)
+      const h = Math.round(img.height * ratio)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg',
+        0.85,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Falha ao carregar imagem')) }
+    img.src = url
+  })
+}
 
 function Field({ label, required, error, hint, children }) {
   return (
@@ -39,8 +67,8 @@ function PhotoUpload({ preview, onFile, onRemove, error }) {
       onFile(null, 'Formato inválido. Use JPG, PNG ou WebP.')
       return
     }
-    if (file.size > MAX_FILE_SIZE) {
-      onFile(null, 'Arquivo muito grande. Máximo 2 MB.')
+    if (file.size > MAX_RAW_SIZE) {
+      onFile(null, 'Arquivo muito grande. Máximo 20 MB.')
       return
     }
     onFile(file, null)
@@ -85,7 +113,7 @@ function PhotoUpload({ preview, onFile, onRemove, error }) {
               <Upload className="w-4 h-4" />
               Trocar foto
             </button>
-            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · máx. 2 MB</p>
+            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · até 20 MB</p>
           </div>
         </div>
       ) : (
@@ -111,7 +139,7 @@ function PhotoUpload({ preview, onFile, onRemove, error }) {
             <p className="text-sm font-medium text-gray-700">
               {dragging ? 'Solte a imagem aqui' : 'Arraste uma foto ou clique para selecionar'}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · máx. 2 MB</p>
+            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · até 20 MB (comprimido automaticamente)</p>
           </div>
         </div>
       )}
@@ -125,7 +153,7 @@ function PhotoUpload({ preview, onFile, onRemove, error }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         className="hidden"
         onChange={(e) => processFile(e.target.files?.[0])}
       />
@@ -138,6 +166,7 @@ export default function EmployeeForm() {
   const isEdit = Boolean(id)
   const navigate = useNavigate()
   const { data: employees = [] } = useEmployees()
+  const { data: departments = [] } = useDepartments()
   const addEmployee = useAddEmployee()
   const updateEmployee = useUpdateEmployee()
 
@@ -154,6 +183,7 @@ export default function EmployeeForm() {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [photoError, setPhotoError] = useState('')
+  const [compressing, setCompressing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState({})
@@ -200,6 +230,8 @@ export default function EmployeeForm() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Clear stale photo error if user isn't uploading a file
+    if (!photoFile) setPhotoError('')
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     if (photoError) return
@@ -209,11 +241,13 @@ export default function EmployeeForm() {
       let photoUrl = isEdit ? (employee?.photo_url ?? null) : null
 
       if (isEdit) {
-        // Editing: keep existing photo unless user picked a new one
         if (photoFile) {
-          photoUrl = await uploadPhoto(id, photoFile)
+          setCompressing(true)
+          const compressed = await compressImage(photoFile)
+          setCompressing(false)
+          photoUrl = await uploadPhoto(id, compressed)
         } else if (!photoPreview) {
-          photoUrl = null // user removed the photo
+          photoUrl = null
         }
 
         await updateEmployee.mutateAsync({
@@ -224,10 +258,12 @@ export default function EmployeeForm() {
           email: form.email || null,
         })
       } else {
-        // Creating: generate UUID here so photo path matches the new record
         const newId = crypto.randomUUID()
         if (photoFile) {
-          photoUrl = await uploadPhoto(newId, photoFile)
+          setCompressing(true)
+          const compressed = await compressImage(photoFile)
+          setCompressing(false)
+          photoUrl = await uploadPhoto(newId, compressed)
         }
 
         await addEmployee.mutateAsync({
@@ -242,6 +278,7 @@ export default function EmployeeForm() {
       setSaved(true)
       setTimeout(() => navigate('/admin/employees'), 800)
     } catch (err) {
+      setCompressing(false)
       setErrors({ _global: err.message || 'Erro ao salvar. Tente novamente.' })
     } finally {
       setSaving(false)
@@ -249,7 +286,6 @@ export default function EmployeeForm() {
   }
 
   const managers = employees.filter((e) => e.id !== id)
-  const departments = [...new Set(employees.map((e) => e.department))].sort()
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -324,17 +360,16 @@ export default function EmployeeForm() {
             </Field>
 
             <Field label="Departamento" required error={errors.department}>
-              <input
-                type="text"
+              <select
                 value={form.department}
                 onChange={(e) => set('department', e.target.value)}
-                placeholder="Ex: Pessoas e Cultura"
-                list="departments-list"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-apatita/40 transition-colors ${errors.department ? 'border-vermelho bg-red-50' : 'border-gray-200 focus:border-apatita'}`}
-              />
-              <datalist id="departments-list">
-                {departments.map((d) => <option key={d} value={d} />)}
-              </datalist>
+                className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-apatita/40 transition-colors bg-white ${errors.department ? 'border-vermelho bg-red-50' : 'border-gray-200 focus:border-apatita'}`}
+              >
+                <option value="">— Selecione —</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.name}>{d.name}</option>
+                ))}
+              </select>
             </Field>
           </div>
 
@@ -413,16 +448,12 @@ export default function EmployeeForm() {
             disabled={saving || saved}
             className="flex-1 px-4 py-3 bg-apatita text-white rounded-xl text-sm font-semibold hover:bg-apatita/90 active:scale-[0.98] disabled:opacity-60 transition-all shadow-sm flex items-center justify-center gap-2"
           >
-            {saving ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Salvando…
-              </>
+            {compressing ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Comprimindo imagem…</>
+            ) : saving ? (
+              <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Salvando…</>
             ) : saved ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Salvo!
-              </>
+              <><CheckCircle2 className="w-4 h-4" /> Salvo!</>
             ) : (
               isEdit ? 'Salvar alterações' : 'Adicionar colaborador'
             )}
