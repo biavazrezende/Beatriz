@@ -9,6 +9,7 @@ import EmployeeList from './pages/Admin/EmployeeList'
 import EmployeeForm from './pages/Admin/EmployeeForm'
 import AuditLog from './pages/Admin/AuditLog'
 import OrgTree from './pages/Admin/OrgTree'
+import Departments from './pages/Admin/Departments'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="employees/:id/edit" element={<EmployeeForm />} />
             <Route path="audit" element={<AuditLog />} />
             <Route path="org-tree" element={<OrgTree />} />
+            <Route path="departments" element={<Departments />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
